@@ -1,55 +1,27 @@
+const apiKey= "AIzaSyAPT6vDDkv3ypFEVXWfYavukxEllwKKxTo";
 
-//AIzaSyD0gkiAhKRH5pEZiHIx1cZz9RKnXsecGBs//
-import {
-    GoogleGenerativeAI,
-    HarmCategory,
-    HarmBlockThreshold,
-  } from "@google/generative-ai"
-  
-  const MODEL_NAME = "gemini-1.5-flash-latest";
-  const API_KEY = "AIzaSyD0gkiAhKRH5pEZiHIx1cZz9RKnXsecGBs";
-  
-  async function runChat(prompt) {
-    const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-  
-    const generationConfig = {
-      temperature: 0.9,
-      topK: 1,
-      topP: 1,
-      maxOutputTokens: 2048,
-    };
-  
-    const safetySettings = [
-      {
-        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-      },
-    ];
-  
-    const chat = model.startChat({
-      generationConfig,
-      safetySettings,
-      history: [
-      ],
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: apiKey });
+
+async function runChat(prompt, retries = 3) {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
     });
-  
-    const result = await chat.sendMessage(prompt);
-    const response = result.response;
-    console.log(response.text());
-    return response.text();
+    return response.text;
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+
+    if (retries > 0) {
+      console.log(`Retrying... (${3 - retries + 1})`);
+      await new Promise((res) => setTimeout(res, 2000));
+      return runChat(prompt, retries - 1);
+    } else {
+      return "Server busy 🔁 Try again later!";
+    }
   }
-  
- export default runChat;
+}
+
+export default runChat;
